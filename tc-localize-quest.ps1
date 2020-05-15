@@ -46,7 +46,7 @@ ForEach-Object {
 	$quest_name = $_.Groups[2].Value;
 	
 	if( $quest_id -And $quest_name ) {
-		echo "$($quest_id)|$($quest_name)";
+		Write-Output "$($quest_id)|$($quest_name)";
 
 		# https://it.wowhead.com/quest=8326
 		$url_toParse = "https://$($zone_lang).wowhead.com/quest=$($quest_id)";
@@ -55,7 +55,7 @@ ForEach-Object {
 		$quest_id = $Matches[5];
 		
 		if( !$quest_id ) {
-			echo "Quest ID could not be parsed";
+			Write-Output "Quest ID could not be parsed";
 			Read-Host -Prompt "Press Enter to exit";
 		}
 		
