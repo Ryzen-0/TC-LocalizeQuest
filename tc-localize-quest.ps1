@@ -39,7 +39,7 @@ $temp = $url.Content -match 'data:\[(.+)\]';
 
 $quests_toParse = $Matches[1];
 
-$quests_toParse -replace "'","___" | Select-String -Pattern '\{[\w\"\:\, \[\]]+\"id\"\:([\d]+)[\w\"\:\, \[\]]+\"name"\:\"([\w\s\!\\\:]+)\"[\w\"\:\, \[\]]+\}' -AllMatches | 
+$quests_toParse -replace "'","___" | Select-String -Pattern '\{[\w\"\:\, \[\]\-]+\"id\"\:([\d]+)[\w\"\:\, \[\]\-]+\"name"\:\"([\w\s\!\\\:\-]+)\"[\w\"\:\, \[\]\-]+\}' -AllMatches | 
 ForEach-Object {$_.Matches} |
 ForEach-Object {
 	$quest_id = $_.Groups[1].Value;
