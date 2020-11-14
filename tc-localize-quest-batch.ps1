@@ -1,58 +1,57 @@
 # $PSDefaultParameterValues['*:Encoding'] = 'utf8'; # no need for PowerShell 7+
 
-# https://it.wowhead.com/sunstrider-isle-quests
-$url_toParse = Read-Host -Prompt 'Enter the URL of the quest zone to be parsed (es. https://it.wowhead.com/quests/eastern-kingdoms/sunstrider-isle)';
+$cont = 0;
+$zone_lang = "it";
+$file_toSave = "export-to-db.sql";
+$nAtOnce = 5;
 
-$url_toParse -match 'http[s]*\:\/\/([\w]+).*\/([\w\-]+)';
+$last_quest_file = "lastquest_id.txt";
+$resumeFrom_questID = 0;
 
-$zone_lang = $Matches[1];
-$zone_name = $Matches[2];
-$langcode = "";
-
-# if zone file does not exists ("zonename-lang.sql")
-$file_toSave = "$($zone_name)-$($zone_lang).sql";
-if( -not( Test-Path -LiteralPath $file_toSave -PathType Leaf)) {
-	New-Item $file_toSave;
+if( Test-Path $last_quest_file ) {
+    $resumeFrom_questID = Get-Content $last_quest_file;
 } else {
-	Remove-Item $file_toSave;
+    Remove-Item $file_toSave;
 }
 
-switch( $zone_lang ) {
-    "it" {
-		$langcode = "itIT";
-	}
-    "es" {
-		$langcode = "esES";
-	}
-    "fr" {
-		$langcode = "frFR";
-	}
-    "de" {
-		$langcode = "deDE";
-	}
-}
+$csvToImport = Get-ChildItem -Filter *.csv | Select-Object -First 1 | ForEach-Object { $_.Name; };
 
+Import-Csv $csvToImport |`
+    ForEach-Object {
 
-$url = Invoke-WebRequest -UseBasicParsing $url_toParse;
+        $quest_id = $_.globalID
+    
+        if( $resumeFrom_questID -gt 0 -and $resumeFrom_questID -ne $quest_id ) {
+            
+            Write-Output "$quest_id|SKIP";
+            return;
+        } else {
+            $resumeFrom_questID = 0;
+            Write-Output "$quest_id";
+        }
 
-$url.Content -match 'data:\[(.+)\]';
-
-$quests_toParse = $Matches[1];
-
-$quests_toParse -replace "'","___" | Select-String -Pattern '\{[\w\"\:\, \[\]\-]+\"id\"\:([\d]+)[\w\"\:\, \[\]\-]+\"name"\:\"([\w\s\!\\\:\-\[\]]+)\"[\w\"\:\, \[\]\-]+\}' -AllMatches | 
-ForEach-Object {$_.Matches} |
-ForEach-Object {
-	$quest_id = $_.Groups[1].Value;
-	$quest_name = $_.Groups[2].Value;
-	
-	if( $quest_id -And $quest_name ) {
-		Write-Output "$($quest_id)|$($quest_name)";
+        if( $cont -ge $nAtOnce ) {
+            Set-Content -Path $last_quest_file -Value $quest_id;
+            break;
+        }
 
 		# https://it.wowhead.com/quest=8326
 		$url_toParse = "https://$($zone_lang).wowhead.com/quest=$($quest_id)";
 
-		Write-Output "$($url_toParse)"; # debug
-		Write-Output "";
+        switch( $zone_lang ) {
+            "it" {
+                $langcode = "itIT";
+            }
+            "es" {
+                $langcode = "esES";
+            }
+            "fr" {
+                $langcode = "frFR";
+            }
+            "de" {
+                $langcode = "deDE";
+            }
+        }
 
 		$url_toParse -match "http(s)*\:\/\/([\w]*){2}(\.*)(.*)quest\=([\d\']+).*";
 		$quest_id = $Matches[5];
@@ -63,6 +62,14 @@ ForEach-Object {
 		}
 		
 		$url = Invoke-WebRequest -UseBasicParsing $url_toParse;
+
+        # quest name
+        $url.Content -match '\<h1.*\>(.*)\<\/h1\>';
+        $quest_name = $Matches[1];
+
+        Write-Output $quest_name;
+        Write-Output "$($url_toParse)"; # debug
+        Write-Output "";
 
 		# quest progress regexp
 		$url.Content -match '\<div id="lknlksndgg-progress"([\w = \"\:\;\<\>\/]*)\>(.+)';
@@ -96,10 +103,7 @@ ForEach-Object {
 			Add-Content $file_toSave "INSERT INTO quest_offer_reward_locale (ID, locale, RewardText, VerifiedBuild) VALUES ($($quest_id), '$($langcode)', '$($quest_completition_text)', 0);";
 		}
 
-		
-	}
-}
+        $cont++;
+    }
 
-# reload all locales
 
-Read-Host -Prompt "Press Enter to exit"
