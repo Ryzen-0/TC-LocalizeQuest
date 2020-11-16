@@ -32,7 +32,7 @@ function Get-GTranslate {
     };
 
     # fix returned string
-    return $textTranslated -replace "'", "\'" -replace '$ n', '$n' -replace '$ c', '$c' -replace '$ r', '$r';
+    return $textTranslated -replace "'", "\'" -replace "\\", "\" -replace '\$ n', '$n' -replace '\$ c', '$c' -replace '\$ r', '$r';
 }
 
 # https://it.wowhead.com/sunstrider-isle-quests
