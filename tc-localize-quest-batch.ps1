@@ -1,4 +1,4 @@
-# $PSDefaultParameterValues['*:Encoding'] = 'utf8'; # no need for PowerShell 7+
+$PSDefaultParameterValues['*:Encoding'] = 'utf8'; # no need for PowerShell 7+
 
 $cont = 0;
 $zone_lang = "it";

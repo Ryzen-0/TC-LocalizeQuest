@@ -15,3 +15,8 @@ SELECT quest_offer_reward.ID AS globalID FROM quest_offer_reward
  WHERE locale != @lang_code OR locale IS NULL
  LIMIT 50000;
 ```
+
+To remove SKIPPED quests use this regexp
+```
+\n-- (.*) \| SKIP\n
+```
