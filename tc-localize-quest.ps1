@@ -8,10 +8,10 @@ function Get-GTranslate {
 
 	$Uri = "https://translate.googleapis.com/translate_a/single?client=gtx&sl=auto&tl=$($intoLang)&dt=t&q=$textToTranslate";
 	
-    $Response = Invoke-WebRequest -Uri $Uri -Method Get;
-    $RispostaJSON = $Response.Content | ConvertFrom-Json;
+	$Response = Invoke-WebRequest -Uri $Uri -Method Get;
+	$RispostaJSON = $Response.Content | ConvertFrom-Json;
     # $RispostaJSON = Get-Content -Path "esempio.json" | ConvertFrom-Json; # debug
-
+	
     $textTranslated = "";
     $RispostaJSON[0] | ForEach-Object -Process {
 
@@ -31,8 +31,12 @@ function Get-GTranslate {
         return;
     };
 
-    # fix returned string
-    return $textTranslated -replace "'", "\'" -replace "\\", "\" -replace '\$ n', '$n' -replace '\$ c', '$c' -replace '\$ r', '$r';
+	$OrigLangCode = $RispostaJSON[2];
+
+	# fix returned string
+	$textTranslated = $textTranslated -replace "\\", "" -replace "'", "\'" -replace '\$ n', '$n' -replace '\$ c', '$c' -replace '\$ r', '$r';
+    
+	return $textTranslated, $OrigLangCode;
 }
 
 # https://it.wowhead.com/sunstrider-isle-quests
@@ -47,11 +51,13 @@ $langcode = "";
 
 # if zone file does not exists ("zonename-lang.sql")
 $file_toSave = "$($zone_name)-$($zone_lang)$($url_filters).sql";
+$file_toSave_gTranslate = "$($zone_name)-$($zone_lang)$($url_filters)-gtranslate.sql";
 
 if( -not( Test-Path -LiteralPath $file_toSave -PathType Leaf)) {
 	New-Item $file_toSave;
 } else {
 	Remove-Item $file_toSave;
+	Remove-Item $file_toSave_gTranslate;
 }
 
 switch( $zone_lang ) {
@@ -109,13 +115,7 @@ ForEach-Object {
 		$url.Content -match '\<div id="lknlksndgg-completion"([\w = \"\:\;\<\>\/]*)\>(.+)';
 		$quest_completition = $Matches[2];
 
-		if( $quest_progress -or $quest_completition ) {
-			Add-Content $file_toSave "";
-			Add-Content $file_toSave "-- $($quest_name)";
-		} else {
-			Add-Content $file_toSave "";
-			Add-Content $file_toSave "-- $($quest_name) | SKIP";
-		}
+		$prev_saveFile = "";
 
 		if( $quest_progress ) {
 			# replace some special characters
@@ -123,11 +123,35 @@ ForEach-Object {
 			
 			# BEGIN translate
 			Start-Sleep -s 30; # to avoid temporary ip ban
-			$quest_progress_text = Get-GTranslate $quest_progress_text $zone_lang;
+			$parsedQuest = Get-GTranslate $quest_progress_text $zone_lang;
 			# END translate
 		
-			Add-Content $file_toSave "DELETE FROM quest_request_items_locale WHERE ID=$($quest_id) AND locale='$($langcode)';";
-			Add-Content $file_toSave "INSERT INTO quest_request_items_locale (ID, locale, CompletionText, VerifiedBuild) VALUES ($($quest_id), '$($langcode)', '$($quest_progress_text)', 0);";
+			if( $parsedQuest[1] -ne $zone_lang ) {
+				# google translated text as fallback
+				$quest_progress_text = $parsedQuest[0];
+				$targetFile = $file_toSave_gTranslate;
+			} else {
+				# official text
+				$targetFile = $file_toSave;
+			}
+
+			if( $prev_saveFile -ne $targetFile ) {
+				$prev_saveFile = $targetFile;
+
+				if( $quest_progress ) {
+
+					$quest_name = $quest_name -replace "___", "'";
+		
+					Add-Content $targetFile "";
+					Add-Content $targetFile "-- $($quest_name)";
+				} else {
+					Add-Content $targetFile "";
+					Add-Content $targetFile "-- $($quest_name) | SKIP";
+				}
+			}
+
+			Add-Content $targetFile "DELETE FROM quest_request_items_locale WHERE ID=$($quest_id) AND locale='$($langcode)';";
+			Add-Content $targetFile "INSERT INTO quest_request_items_locale (ID, locale, CompletionText, VerifiedBuild) VALUES ($($quest_id), '$($langcode)', '$($quest_progress_text)', 0);";
 		}
 		
 		if( $quest_completition ) {
@@ -136,12 +160,39 @@ ForEach-Object {
 			
 			# BEGIN translate
 			Start-Sleep -s 30; # to avoid temporary ip ban
-			$quest_completition_text = Get-GTranslate $quest_completition_text $zone_lang;
+			$parsedQuest = Get-GTranslate $quest_completition_text $zone_lang;
 			# END translate
 
-			Add-Content $file_toSave "DELETE FROM quest_offer_reward_locale WHERE ID=$($quest_id) AND locale='$($langcode)';";
-			Add-Content $file_toSave "INSERT INTO quest_offer_reward_locale (ID, locale, RewardText, VerifiedBuild) VALUES ($($quest_id), '$($langcode)', '$($quest_completition_text)', 0);";
+			if( $parsedQuest[1] -ne $zone_lang ) {
+				# google translated text as fallback
+				$quest_completition_text = $parsedQuest[0];
+				$targetFile = $file_toSave_gTranslate;
+			} else {
+				# official text
+				$targetFile = $file_toSave;
+			}
+
+
+			if( $prev_saveFile -ne $targetFile ) {
+				$prev_saveFile = $targetFile;
+
+				if( $quest_completition ) {
+
+					$quest_name = $quest_name -replace "___", "'";
+		
+					Add-Content $targetFile "";
+					Add-Content $targetFile "-- $($quest_name)";
+				} else {
+					Add-Content $targetFile "";
+					Add-Content $targetFile "-- $($quest_name) | SKIP";
+				}
+			}
+
+			Add-Content $targetFile "DELETE FROM quest_offer_reward_locale WHERE ID=$($quest_id) AND locale='$($langcode)';";
+			Add-Content $targetFile "INSERT INTO quest_offer_reward_locale (ID, locale, RewardText, VerifiedBuild) VALUES ($($quest_id), '$($langcode)', '$($quest_completition_text)', 0);";
 		}
+
+		$prev_saveFile = "";
 	}
 }
 
