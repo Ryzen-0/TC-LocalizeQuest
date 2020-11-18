@@ -122,7 +122,7 @@ ForEach-Object {
 			$quest_progress_text = $quest_progress -replace "'", "\'" -replace "___","\'" -replace "&lt;","<" -replace "&gt;",">" -replace "&nbsp;","" -replace "<name>",'$n' -replace "<class>",'$c' -replace "<race>",'$r' -replace "<br([\s]/*)>","`n";
 			
 			# BEGIN translate
-			Start-Sleep -s 30; # to avoid temporary ip ban
+			Start-Sleep -s 15; # to avoid temporary ip ban
 			$parsedQuest = Get-GTranslate $quest_progress_text $zone_lang;
 			# END translate
 		
@@ -159,7 +159,7 @@ ForEach-Object {
 			$quest_completition_text = $quest_completition -replace "'", "\'" -replace "___","\'" -replace "&lt;","<" -replace "&gt;",">" -replace "&nbsp;","" -replace "<name>",'$n' -replace "<class>",'$c' -replace "<race>",'$r' -replace "<br([\s]/*)>","`n";
 			
 			# BEGIN translate
-			Start-Sleep -s 30; # to avoid temporary ip ban
+			Start-Sleep -s 15; # to avoid temporary ip ban
 			$parsedQuest = Get-GTranslate $quest_completition_text $zone_lang;
 			# END translate
 
