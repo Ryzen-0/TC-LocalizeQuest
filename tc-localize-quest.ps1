@@ -3,12 +3,12 @@ $PSDefaultParameterValues['*:Encoding'] = 'utf8'; # no need for PowerShell 7+
 function Get-GTranslate {
 
     Param( [string]$textToTranslate, [string]$intoLang )
-    
+
     $textToTranslate = [System.Web.HttpUtility]::UrlEncode( $textToTranslate );
 
 	$Uri = "https://translate.googleapis.com/translate_a/single?client=gtx&sl=auto&tl=$($intoLang)&dt=t&q=$textToTranslate";
 	
-	$Response = Invoke-WebRequest -Uri $Uri -Method Get;
+	$Response = Invoke-WebRequest -UseBasicParsing -Uri $Uri -Method Get;
 	$RispostaJSON = $Response.Content | ConvertFrom-Json;
     # $RispostaJSON = Get-Content -Path "esempio.json" | ConvertFrom-Json; # debug
 	
