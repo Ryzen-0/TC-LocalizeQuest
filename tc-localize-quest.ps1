@@ -1,4 +1,5 @@
 $PSDefaultParameterValues['*:Encoding'] = 'utf8'; # no need for PowerShell 7+
+Add-Type -AssemblyName System.Web;
 
 function Get-GTranslate {
 
