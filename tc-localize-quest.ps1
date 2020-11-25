@@ -43,7 +43,7 @@ function Get-GTranslate {
 # https://it.wowhead.com/sunstrider-isle-quests
 $url_toParse = Read-Host -Prompt 'Enter the URL of the quest zone to be parsed (es. https://it.wowhead.com/quests/eastern-kingdoms/sunstrider-isle)';
 
-$url_toParse -match 'http[s]*\:\/\/([\w]+).*\/([\w\-]+)[\#]*(.*)';
+$noOutput = $url_toParse -match 'http[s]*\:\/\/([\w]+).*\/([\w\-]+)[\#]*(.*)';
 
 $zone_lang = $Matches[1];
 $zone_name = $Matches[2];
@@ -58,6 +58,11 @@ if( -not( Test-Path -LiteralPath $file_toSave -PathType Leaf)) {
 	New-Item $file_toSave;
 } else {
 	Remove-Item $file_toSave;
+}
+
+if( -not( Test-Path -LiteralPath $file_toSave_gTranslate -PathType Leaf)) {
+	New-Item $file_toSave_gTranslate;
+} else {
 	Remove-Item $file_toSave_gTranslate;
 }
 
@@ -79,7 +84,7 @@ switch( $zone_lang ) {
 
 $url = Invoke-WebRequest -UseBasicParsing $url_toParse;
 
-$url.Content -match 'data:\[(.+)\]';
+$noOutput = $url.Content -match 'data:\[(.+)\]';
 
 $quests_toParse = $Matches[1];
 
@@ -90,7 +95,9 @@ ForEach-Object {
 	$quest_name = $_.Groups[2].Value;
 	
 	if( $quest_id -And $quest_name ) {
-		Write-Output "$($quest_id)|$($quest_name)";
+
+		$timeNow = Get-Date -UFormat "[%H:%M]";
+		Write-Output "$($timeNow) $($quest_name)";
 
 		# https://it.wowhead.com/quest=8326
 		$url_toParse = "https://$($zone_lang).wowhead.com/quest=$($quest_id)";
@@ -98,7 +105,7 @@ ForEach-Object {
 		Write-Output "$($url_toParse)"; # debug
 		Write-Output "";
 
-		$url_toParse -match "http(s)*\:\/\/([\w]*){2}(\.*)(.*)quest\=([\d\']+).*";
+		$noOutput = $url_toParse -match "http(s)*\:\/\/([\w]*){2}(\.*)(.*)quest\=([\d\']+).*";
 		$quest_id = $Matches[5];
 		
 		if( !$quest_id ) {
@@ -109,11 +116,11 @@ ForEach-Object {
 		$url = Invoke-WebRequest -UseBasicParsing $url_toParse;
 
 		# quest progress regexp
-		$url.Content -match '\<div id="lknlksndgg-progress"([\w = \"\:\;\<\>\/]*)\>(.+)';
+		$noOutput = $url.Content -match '\<div id="lknlksndgg-progress"([\w = \"\:\;\<\>\/]*)\>(.+)';
 		$quest_progress = $Matches[2];
 
 		# quest completition regexp
-		$url.Content -match '\<div id="lknlksndgg-completion"([\w = \"\:\;\<\>\/]*)\>(.+)';
+		$noOutput = $url.Content -match '\<div id="lknlksndgg-completion"([\w = \"\:\;\<\>\/]*)\>(.+)';
 		$quest_completition = $Matches[2];
 
 		$prev_saveFile = "";
@@ -139,20 +146,18 @@ ForEach-Object {
 			if( $prev_saveFile -ne $targetFile ) {
 				$prev_saveFile = $targetFile;
 
-				if( $quest_progress ) {
-
-					$quest_name = $quest_name -replace "___", "'";
-		
-					Add-Content $targetFile "";
-					Add-Content $targetFile "-- $($quest_name)";
-				} else {
-					Add-Content $targetFile "";
-					Add-Content $targetFile "-- $($quest_name) | SKIP";
-				}
+				$quest_name = $quest_name -replace "___", "'";
+	
+				Add-Content $targetFile "";
+				Add-Content $targetFile "-- $($quest_name)";
 			}
 
 			Add-Content $targetFile "DELETE FROM quest_request_items_locale WHERE ID=$($quest_id) AND locale='$($langcode)';";
 			Add-Content $targetFile "INSERT INTO quest_request_items_locale (ID, locale, CompletionText, VerifiedBuild) VALUES ($($quest_id), '$($langcode)', '$($quest_progress_text)', 0);";
+
+			Write-Output "quest_progress DONE";
+		} else {
+			Write-Output "quest_progress SKIP";
 		}
 		
 		if( $quest_completition ) {
@@ -177,21 +182,21 @@ ForEach-Object {
 			if( $prev_saveFile -ne $targetFile ) {
 				$prev_saveFile = $targetFile;
 
-				if( $quest_completition ) {
-
-					$quest_name = $quest_name -replace "___", "'";
-		
-					Add-Content $targetFile "";
-					Add-Content $targetFile "-- $($quest_name)";
-				} else {
-					Add-Content $targetFile "";
-					Add-Content $targetFile "-- $($quest_name) | SKIP";
-				}
+				$quest_name = $quest_name -replace "___", "'";
+	
+				Add-Content $targetFile "";
+				Add-Content $targetFile "-- $($quest_name)";
 			}
 
 			Add-Content $targetFile "DELETE FROM quest_offer_reward_locale WHERE ID=$($quest_id) AND locale='$($langcode)';";
 			Add-Content $targetFile "INSERT INTO quest_offer_reward_locale (ID, locale, RewardText, VerifiedBuild) VALUES ($($quest_id), '$($langcode)', '$($quest_completition_text)', 0);";
+
+			Write-Output "quest_completition DONE";
+		} else {
+			Write-Output "quest_completition SKIP";
 		}
+
+		Write-Output "";
 
 		$prev_saveFile = "";
 	}
