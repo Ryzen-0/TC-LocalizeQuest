@@ -126,7 +126,7 @@ ForEach-Object {
 
 		if( $quest_progress ) {
 			# replace some special characters
-			$quest_progress_text = $quest_progress -replace "'", "\'" -replace "___","\'" -replace "&lt;","<" -replace "&gt;",">" -replace "&nbsp;","" -replace "<name>",'$n' -replace "<class>",'$c' -replace "<race>",'$r' -replace "<br([\s]/*)>","`n";
+			$quest_progress_text = $quest_progress -replace "<br([\s]/*)>","`n" -replace '<[^>]+>','' -replace "'", "\'" -replace "___","\'" -replace "&lt;","<" -replace "&gt;",">" -replace "&nbsp;","" -replace "<name>",'$n' -replace "<class>",'$c' -replace "<race>",'$r';
 			
 			# BEGIN translate
 			Start-Sleep -s 8; # to avoid temporary ip ban
@@ -161,7 +161,7 @@ ForEach-Object {
 		
 		if( $quest_completition ) {
 			# replace some special characters
-			$quest_completition_text = $quest_completition -replace "'", "\'" -replace "___","\'" -replace "&lt;","<" -replace "&gt;",">" -replace "&nbsp;","" -replace "<name>",'$n' -replace "<class>",'$c' -replace "<race>",'$r' -replace "<br([\s]/*)>","`n";
+			$quest_completition_text = $quest_completition -replace "<br([\s]/*)>","`n" -replace '<[^>]+>','' -replace "'", "\'" -replace "___","\'" -replace "&lt;","<" -replace "&gt;",">" -replace "&nbsp;","" -replace "<name>",'$n' -replace "<class>",'$c' -replace "<race>",'$r';
 			
 			# BEGIN translate
 			Start-Sleep -s 7; # to avoid temporary ip ban
