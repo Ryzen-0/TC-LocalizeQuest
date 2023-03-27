@@ -41,9 +41,10 @@ function Get-GTranslate {
 }
 
 # https://it.wowhead.com/sunstrider-isle-quests
-$url_toParse = Read-Host -Prompt 'Enter the URL of the quest zone to be parsed (es. https://it.wowhead.com/quests/eastern-kingdoms/sunstrider-isle)';
+$url_toParse = Read-Host -Prompt 'Enter the URL of the quest zone to be parsed (es. https://www.wowhead.com/it/quests/eastern-kingdoms/sunstrider-isle)';
 
-$noOutput = $url_toParse -match 'http[s]*\:\/\/([\w]+).*\/([\w\-]+)[\#]*(.*)';
+#$noOutput = $url_toParse -match 'http[s]*\:\/\/([\w]+).*\/([\w\-]+)[\#]*(.*)';
+$noOutput = $url_toParse -match 'http[s]*\:\/\/.*\/([\w]{2})\/quests\/[\w\-]+\/([\w\-]+)[\#]*(.*)';
 
 $zone_lang = $Matches[1];
 $zone_name = $Matches[2];
@@ -100,9 +101,7 @@ ForEach-Object {
 		Write-Output "$($timeNow) $($quest_name)";
 
 		# https://it.wowhead.com/quest=8326
-		$url_toParse = "https://$($zone_lang).wowhead.com/quest=$($quest_id)";
-
-		Write-Output "$($url_toParse)"; # debug
+		$url_toParse = "https://www.wowhead.com/$($zone_lang)/quest=$($quest_id)";
 		Write-Output "";
 
 		$noOutput = $url_toParse -match "http(s)*\:\/\/([\w]*){2}(\.*)(.*)quest\=([\d\']+).*";
