@@ -115,18 +115,20 @@ ForEach-Object {
 		$url = Invoke-WebRequest -UseBasicParsing $url_toParse;
 
 		# quest progress regexp
-		$noOutput = $url.Content -match '\<div id="lknlksndgg-progress"([\w = \"\:\;\<\>\/]*)\>(.+)';
+		#$noOutput = $url.Content -match '\<div id="lknlksndgg-progress"([\w = \"\:\;\<\>\/]*)\>(.+)';
+		$noOutput = $url.Content -match '\<div id="lknlksndgg-progress"([\w = \"\:\;\>\/]*)\>(.+)';
 		$quest_progress = $Matches[2];
 
 		# quest completition regexp
-		$noOutput = $url.Content -match '\<div id="lknlksndgg-completion"([\w = \"\:\;\<\>\/]*)\>(.+)';
+		#$noOutput = $url.Content -match '\<div id="lknlksndgg-completion"([\w = \"\:\;\/]*)\>(.+)';
+		$noOutput = $url.Content -match '\<div id="lknlksndgg-completion"([\w = \"\:\;\>\/]*)\>(.+)';
 		$quest_completition = $Matches[2];
 
 		$prev_saveFile = "";
 
 		if( $quest_progress ) {
 			# replace some special characters
-			$quest_progress_text = $quest_progress -replace "<br([\s]/*)>","`n" -replace '<[^>]+>','' -replace "'", "\'" -replace "___","\'" -replace "&lt;","<" -replace "&gt;",">" -replace "&nbsp;","" -replace "<name>",'$n' -replace "<class>",'$c' -replace "<race>",'$r';
+			$quest_progress_text = $quest_progress -replace "<br([\s]/*)>","`n" -replace '<.*?>','' -replace "'", "\'" -replace "___","\'" -replace "&lt;","<" -replace "&gt;",">" -replace "&nbsp;","" -replace "<name>",'$n' -replace "<class>",'$c' -replace "<race>",'$r';
 			
 			# BEGIN translate
 			Start-Sleep -s 8; # to avoid temporary ip ban
@@ -161,7 +163,7 @@ ForEach-Object {
 		
 		if( $quest_completition ) {
 			# replace some special characters
-			$quest_completition_text = $quest_completition -replace "<br([\s]/*)>","`n" -replace '<[^>]+>','' -replace "'", "\'" -replace "___","\'" -replace "&lt;","<" -replace "&gt;",">" -replace "&nbsp;","" -replace "<name>",'$n' -replace "<class>",'$c' -replace "<race>",'$r';
+			$quest_completition_text = $quest_completition -replace "<br([\s]/*)>","`n" -replace '<.*?>','' -replace "'", "\'" -replace "___","\'" -replace "&lt;","<" -replace "&gt;",">" -replace "&nbsp;","" -replace "<name>",'$n' -replace "<class>",'$c' -replace "<race>",'$r';
 			
 			# BEGIN translate
 			Start-Sleep -s 7; # to avoid temporary ip ban
